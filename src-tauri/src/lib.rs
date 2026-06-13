@@ -30,6 +30,19 @@ pub fn run() {
             commands::settings::get_setting,
             commands::settings::set_setting,
             commands::settings::app_version,
+            commands::menu::list_categories,
+            commands::menu::create_category,
+            commands::menu::update_category,
+            commands::menu::delete_category,
+            commands::menu::list_products,
+            commands::menu::create_product,
+            commands::menu::update_product,
+            commands::menu::set_product_active,
+            commands::menu::delete_product,
+            commands::menu::list_toppings,
+            commands::menu::create_topping,
+            commands::menu::update_topping,
+            commands::menu::delete_topping,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
