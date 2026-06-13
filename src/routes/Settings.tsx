@@ -7,18 +7,25 @@ const KEY = "shop_name"
 export default function Settings() {
   const [name, setName] = useState("")
   const [saved, setSaved] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    getSetting(KEY).then((v) => {
-      setSaved(v)
-      if (v) setName(v)
-    })
+    getSetting(KEY)
+      .then((v) => {
+        setSaved(v)
+        if (v) setName(v)
+      })
+      .catch((e) => setError(String(e)))
   }, [])
 
   async function onSave() {
-    await setSetting(KEY, name)
-    const v = await getSetting(KEY)
-    setSaved(v)
+    setError(null)
+    try {
+      await setSetting(KEY, name)
+      setSaved(name)
+    } catch (e) {
+      setError(String(e))
+    }
   }
 
   return (
@@ -36,6 +43,7 @@ export default function Settings() {
       <p className="text-sm text-muted-foreground">
         Đã lưu: <strong>{saved ?? "(chưa có)"}</strong>
       </p>
+      {error && <p className="text-sm text-destructive">Lỗi: {error}</p>}
     </div>
   )
 }
