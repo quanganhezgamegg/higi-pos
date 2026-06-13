@@ -47,4 +47,11 @@ Phần mềm POS bán hàng tại quầy cho một quán cà phê. Windows deskt
 - Spec thiết kế: `docs/superpowers/specs/2026-06-12-higi-pos-design.md`
 - Kế hoạch theo milestone: `docs/superpowers/plans/` (M0 = nền tảng & CI/CD; M1 menu; M2 bàn; M3 bán hàng lõi; M4 thanh toán/bill/KM; M5 ca & đối soát; M6 báo cáo; M7 cài đặt & backup)
 
+## Quy trình làm việc & bàn giao (Claude ↔ Codex)
+
+- Dự án phát triển theo **milestone** (M0 → M7, xem `docs/superpowers/plans/`). Mỗi milestone: brainstorm → spec/plan → thực thi từng task (TDD) → PR → CI xanh → merge.
+- Làm việc cùng Claude tới khi đạt **~80% ngưỡng token**, sau đó **bàn giao sang Codex** code tiếp. Codex tiếp nối bằng cách đọc **file này** + `docs/superpowers/{specs,plans}` và tuân kiến trúc/quy trình ở trên.
+- **Trạng thái hiện tại:** M0 (nền tảng & CI/CD) đã hoàn tất và merge vào `main`. Các milestone tiếp theo M1–M7 chưa làm.
+- **Git/credential:** `main` được branch-protected (bắt buộc PR + CI checks `frontend`/`rust`, cấm push thẳng). Để push, credential GitHub lưu **ngoài repo** (Git Credential Manager trên Windows) — KHÔNG bao giờ commit token/PAT vào repo.
+
 ## Cập nhật file này mỗi khi có quyết định/quy ước/cấu trúc mới.
