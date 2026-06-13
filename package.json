@@ -11,8 +11,8 @@
     "tauri": "tauri",
     "test": "vitest run",
     "test:watch": "vitest",
-    "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format": "prettier --write ./* --ignore-unknown",
+    "format:check": "prettier --check ./* --ignore-unknown"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.9",
