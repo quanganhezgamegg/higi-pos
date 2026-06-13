@@ -55,10 +55,7 @@ pub fn list_products(
 }
 
 #[tauri::command]
-pub fn create_product(
-    db: State<AppDb>,
-    payload: ProductInput,
-) -> Result<ProductWithSizes, String> {
+pub fn create_product(db: State<AppDb>, payload: ProductInput) -> Result<ProductWithSizes, String> {
     let conn = lock(&db)?;
     menu::create_product(&conn, payload).map_err(|e| e.to_string())
 }
@@ -112,8 +109,7 @@ pub fn update_topping(
     is_active: bool,
 ) -> Result<(), String> {
     let conn = lock(&db)?;
-    menu::update_topping(&conn, id, &name, price, sort_order, is_active)
-        .map_err(|e| e.to_string())
+    menu::update_topping(&conn, id, &name, price, sort_order, is_active).map_err(|e| e.to_string())
 }
 
 #[tauri::command]

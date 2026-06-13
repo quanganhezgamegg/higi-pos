@@ -11,6 +11,7 @@ use crate::db::AppDb;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
@@ -43,6 +44,8 @@ pub fn run() {
             commands::menu::create_topping,
             commands::menu::update_topping,
             commands::menu::delete_topping,
+            commands::image::save_product_image,
+            commands::image::read_image_data_url,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

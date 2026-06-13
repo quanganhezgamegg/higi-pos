@@ -25,3 +25,6 @@ tauri = { version = "2.11.2", features = [] }
 tauri-plugin-log = "2"
 rusqlite = { version = "0.40.1", features = ["bundled"] }
 rusqlite_migration = "2.6.0"
+tauri-plugin-dialog = "2.7.1"
+uuid = { version = "1.23.3", features = ["v4"] }
+base64 = "0.22.1"
