@@ -1,5 +1,6 @@
 mod commands;
 mod db;
+mod domain;
 mod repo;
 
 use std::sync::Mutex;
