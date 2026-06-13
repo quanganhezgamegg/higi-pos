@@ -1,5 +1,6 @@
 mod commands;
 mod db;
+mod domain;
 mod repo;
 
 use std::sync::Mutex;
@@ -10,6 +11,7 @@ use crate::db::AppDb;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
@@ -29,6 +31,21 @@ pub fn run() {
             commands::settings::get_setting,
             commands::settings::set_setting,
             commands::settings::app_version,
+            commands::menu::list_categories,
+            commands::menu::create_category,
+            commands::menu::update_category,
+            commands::menu::delete_category,
+            commands::menu::list_products,
+            commands::menu::create_product,
+            commands::menu::update_product,
+            commands::menu::set_product_active,
+            commands::menu::delete_product,
+            commands::menu::list_toppings,
+            commands::menu::create_topping,
+            commands::menu::update_topping,
+            commands::menu::delete_topping,
+            commands::image::save_product_image,
+            commands::image::read_image_data_url,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
