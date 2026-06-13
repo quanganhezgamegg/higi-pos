@@ -1,12 +1,12 @@
-import { Button } from "@/components/ui/button"
+import { createBrowserRouter, RouterProvider } from "react-router-dom"
+import Home from "@/routes/Home"
+import Settings from "@/routes/Settings"
 
-function App() {
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background text-foreground">
-      <h1 className="text-3xl font-bold">HiGi POS</h1>
-      <Button>Nút thử nghiệm</Button>
-    </div>
-  )
+const router = createBrowserRouter([
+  { path: "/", element: <Home /> },
+  { path: "/settings", element: <Settings /> },
+])
+
+export default function App() {
+  return <RouterProvider router={router} />
 }
-
-export default App
