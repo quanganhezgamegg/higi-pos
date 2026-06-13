@@ -46,7 +46,10 @@ mod tests {
         let conn = test_conn();
         set_setting(&conn, "shop_name", "A").unwrap();
         set_setting(&conn, "shop_name", "B").unwrap();
-        assert_eq!(get_setting(&conn, "shop_name").unwrap(), Some("B".to_string()));
+        assert_eq!(
+            get_setting(&conn, "shop_name").unwrap(),
+            Some("B".to_string())
+        );
     }
 
     #[test]

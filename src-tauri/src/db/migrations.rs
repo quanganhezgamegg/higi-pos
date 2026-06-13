@@ -3,9 +3,7 @@ use rusqlite_migration::{Migrations, M};
 
 /// Tập migrations của ứng dụng (thêm M::up mới ở CUỐI danh sách khi tiến hoá schema).
 pub fn migrations() -> Migrations<'static> {
-    Migrations::new(vec![M::up(include_str!(
-        "../../migrations/0001_init.sql"
-    ))])
+    Migrations::new(vec![M::up(include_str!("../../migrations/0001_init.sql"))])
 }
 
 /// Đưa CSDL về schema mới nhất.
