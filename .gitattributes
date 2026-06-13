@@ -1,0 +1,6 @@
+* text=auto eol=lf
+*.rs text eol=lf
+*.{cmd,bat} text eol=crlf
+*.png binary
+*.ico binary
+*.icns binary
