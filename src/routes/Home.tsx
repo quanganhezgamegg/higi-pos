@@ -10,6 +10,9 @@ export default function Home() {
           <Link to="/menu">Quản lý Menu</Link>
         </Button>
         <Button className="h-11" variant="outline" asChild>
+          <Link to="/tables">Sơ đồ bàn</Link>
+        </Button>
+        <Button className="h-11" variant="outline" asChild>
           <Link to="/settings">Mở Cài đặt</Link>
         </Button>
       </div>
