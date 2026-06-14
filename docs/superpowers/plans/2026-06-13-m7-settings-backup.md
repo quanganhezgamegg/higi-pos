@@ -500,9 +500,9 @@ pub fn update_sugar_ice_levels(
     payload: SugarIceInput,
 ) -> Result<(), String> {
     let conn = lock(&db)?;
-    let sugar_refs: Vec<&str> = payload.sugar_levels.iter().map(String::as_str).collect();
-    let ice_refs: Vec<&str> = payload.ice_levels.iter().map(String::as_str).collect();
-    repo::update_sugar_ice_levels(&conn, &sugar_refs, &ice_refs).map_err(|e| e.to_string())
+    let sugar: Vec<&str> = payload.sugar_levels.iter().map(|s| s.as_str()).collect();
+    let ice: Vec<&str> = payload.ice_levels.iter().map(|s| s.as_str()).collect();
+    repo::update_sugar_ice_levels(&conn, &sugar, &ice).map_err(|e| e.to_string())
 }
 ```
 

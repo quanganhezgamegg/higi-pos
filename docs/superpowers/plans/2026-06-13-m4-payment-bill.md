@@ -254,6 +254,26 @@ pub use crate::domain::payments::{OrderDiscount, Payment};
 ```
 Giữ nguyên các field `pub discounts: Vec<OrderDiscount>` và `pub payments: Vec<Payment>` trong struct `Order` — không thay đổi.
 
+- [ ] **Step 3b: Cập nhật frontend type `src/lib/api/orders.ts`** — thêm import và thay kiểu placeholder:
+
+```ts
+// Thêm vào đầu file (sau import invoke):
+import type { OrderDiscount, Payment } from "@/lib/api/payments"
+
+// Trong type Order, thay:
+//   discounts: unknown[]   →   discounts: OrderDiscount[]
+//   payments: unknown[]    →   payments: Payment[]
+```
+
+Ví dụ sau khi sửa:
+```ts
+export type Order = {
+  // ... các field khác giữ nguyên ...
+  discounts: OrderDiscount[]
+  payments: Payment[]
+}
+```
+
 - [ ] **Step 4: Build** — Run: `cargo build --manifest-path src-tauri/Cargo.toml`
 Expected: biên dịch OK, không có lỗi kiểu.
 
@@ -677,18 +697,19 @@ mod tests {
     #[test]
     fn add_cash_payment_computes_change() {
         let c = conn();
-        let order = open_order_with_item(&c, 85_000, 1);
+        // order total = 100_000 (unit_price=100_000, qty=1)
+        let order = open_order_with_item(&c, 100_000, 1);
         let input = PaymentInput {
             method: PaymentMethod::Cash,
-            amount: 85_000,
-            tendered: Some(100_000),
+            amount: 100_000,
+            tendered: Some(120_000),  // tendered 120000, order total 100000 → change = 20000
             ref_note: None,
         };
         let updated = add_payment(&c, order.id, input).unwrap();
         assert_eq!(updated.payments.len(), 1);
         let p = &updated.payments[0];
-        assert_eq!(p.change_due, Some(15_000));
-        assert_eq!(p.tendered, Some(100_000));
+        assert_eq!(p.change_due, Some(20_000));   // max(0, 120000 − 100000)
+        assert_eq!(p.tendered, Some(120_000));
     }
 
     #[test]
@@ -1027,11 +1048,11 @@ pub fn add_payment(conn: &Connection, order_id: i64, input: PaymentInput) -> rus
     if input.amount <= 0 {
         return Err(rusqlite::Error::InvalidParameterName("Số tiền thanh toán phải > 0".into()));
     }
-    // Tính change_due cho CASH
+    // Tính change_due cho CASH: change = max(0, tendered - order_total) (contract §4 rule 8)
     let (change_due, tendered) = if matches!(input.method, PaymentMethod::Cash) {
-        let t = input.tendered;
-        let c = t.map(|ten| ten.saturating_sub(input.amount).max(0));
-        (c, t)
+        let order_total: i64 = conn.query_row("SELECT total FROM orders WHERE id=?1", [order_id], |r| r.get(0))?;
+        let change_due = input.tendered.map(|t| (t - order_total).max(0));
+        (change_due, input.tendered)
     } else {
         (None, None)
     };
