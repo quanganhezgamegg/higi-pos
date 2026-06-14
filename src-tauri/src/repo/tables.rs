@@ -296,18 +296,16 @@ mod tests {
     fn table_create_rejects_blank_name() {
         let c = conn();
         let area = seed_area(&c);
-        assert!(
-            create_table(
-                &c,
-                TableInput {
-                    area_id: area.id,
-                    name: "  ".into(),
-                    seats: None,
-                    sort_order: 0,
-                },
-            )
-            .is_err()
-        );
+        assert!(create_table(
+            &c,
+            TableInput {
+                area_id: area.id,
+                name: "  ".into(),
+                seats: None,
+                sort_order: 0,
+            },
+        )
+        .is_err());
     }
 
     #[test]
