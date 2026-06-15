@@ -1,4 +1,4 @@
-import { Pencil, Power, Trash2 } from "lucide-react"
+import { Pencil, Power, Receipt, Trash2 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -11,6 +11,7 @@ type Props = {
   onEdit: (table: Table) => void
   onDelete: (table: Table) => void
   onToggleActive: (table: Table) => void
+  onOpen?: (table: Table) => void
 }
 
 function statusMeta(table: Table, status: TableState) {
@@ -35,8 +36,17 @@ function statusMeta(table: Table, status: TableState) {
   }
 }
 
-export default function TableCard({ table, status, onEdit, onDelete, onToggleActive }: Props) {
+export default function TableCard({
+  table,
+  status,
+  onEdit,
+  onDelete,
+  onToggleActive,
+  onOpen,
+}: Props) {
   const meta = statusMeta(table, status)
+  const actionLabel = status === "DANG_PHUC_VU" ? "Mở đơn" : "Bán tại bàn"
+  const actionAria = status === "DANG_PHUC_VU" ? "Mo don" : "Ban tai ban"
 
   return (
     <Card className={`min-h-[144px] min-w-[164px] ${meta.cardClass}`}>
@@ -51,7 +61,20 @@ export default function TableCard({ table, status, onEdit, onDelete, onToggleAct
           <Badge className={meta.badgeClass}>{meta.label}</Badge>
         </div>
 
-        <div className="mt-auto flex justify-end gap-1">
+        {table.is_active && (
+          <Button
+            aria-label={actionAria}
+            className="mt-auto h-10 w-full"
+            disabled={!onOpen}
+            variant={status === "DANG_PHUC_VU" ? "default" : "outline"}
+            onClick={() => onOpen?.(table)}
+          >
+            <Receipt className="size-4" />
+            {actionLabel}
+          </Button>
+        )}
+
+        <div className="flex justify-end gap-1">
           <Button
             aria-label="Sửa bàn"
             className="size-9"

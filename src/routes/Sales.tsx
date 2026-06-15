@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import type { ReactNode } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { Plus, Receipt, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -45,6 +45,8 @@ function calcLine(item: OrderItemInput) {
 
 export default function Sales() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const requestedTableId = Number(searchParams.get("tableId")) || null
   const [shift, setShift] = useState<Shift | null | undefined>(undefined)
   const [categories, setCategories] = useState<Category[]>([])
   const [products, setProducts] = useState<Product[]>([])
@@ -54,8 +56,8 @@ export default function Sales() {
   const [categoryId, setCategoryId] = useState<number | null>(null)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [cart, setCart] = useState<CartItem[]>([])
-  const [orderType, setOrderType] = useState<OrderType>("TAKEAWAY")
-  const [tableId, setTableId] = useState<number | null>(null)
+  const [orderType, setOrderType] = useState<OrderType>(requestedTableId ? "DINE_IN" : "TAKEAWAY")
+  const [tableId, setTableId] = useState<number | null>(requestedTableId)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
