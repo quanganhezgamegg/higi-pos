@@ -51,7 +51,7 @@ Phần mềm POS bán hàng tại quầy cho một quán cà phê. Windows deskt
 
 - Dự án phát triển theo **milestone** (M0 → M7, xem `docs/superpowers/plans/`). Mỗi milestone: brainstorm → spec/plan → thực thi từng task (TDD) → PR → CI xanh → merge.
 - Làm việc cùng Claude tới khi đạt **~80% ngưỡng token**, sau đó **bàn giao sang Codex** code tiếp. Codex tiếp nối bằng cách đọc **file này** + `docs/superpowers/{specs,plans}` và tuân kiến trúc/quy trình ở trên.
-- **Trạng thái hiện tại:** M0 (nền tảng & CI/CD), M1 (quản lý menu), và M2 (bàn & sơ đồ) đã hoàn tất, merge vào `main`. M1 đã release production tag `v0.2.0`; M2 là bản `0.3.0`. Các milestone M3–M7 chưa code; kế hoạch M2–M7 nằm trong `docs/superpowers/plans/`.
+- **Trạng thái hiện tại:** M0–M2 đã release tới `v0.3.0`. Nhánh `feat/v1-pos-complete` triển khai M3–M7 cho bản `v1.0.0`: bán hàng, thanh toán/bill, ca/đối soát, báo cáo, cài đặt/backup và seed menu HiGi từ `menu.jpg`. Sau khi CI xanh, merge PR rồi tag `v1.0.0` để build production release.
 - **Git/credential:** `main` được branch-protected (bắt buộc PR + CI checks `frontend`/`rust`, cấm push thẳng). Để push, credential GitHub lưu **ngoài repo** (Git Credential Manager trên Windows) — KHÔNG bao giờ commit token/PAT vào repo.
 
 ## Cập nhật file này mỗi khi có quyết định/quy ước/cấu trúc mới.

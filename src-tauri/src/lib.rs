@@ -2,6 +2,7 @@ mod commands;
 mod db;
 mod domain;
 mod repo;
+mod services;
 
 use std::sync::Mutex;
 use tauri::Manager;
@@ -30,6 +31,11 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::settings::get_setting,
             commands::settings::set_setting,
+            commands::settings::get_settings_bulk,
+            commands::settings::set_settings_bulk,
+            commands::settings::list_sugar_levels,
+            commands::settings::list_ice_levels,
+            commands::settings::update_sugar_ice_levels,
             commands::settings::app_version,
             commands::menu::list_categories,
             commands::menu::create_category,
@@ -54,6 +60,35 @@ pub fn run() {
             commands::tables::set_table_active,
             commands::tables::delete_table,
             commands::tables::list_table_status,
+            commands::orders::create_order,
+            commands::orders::get_open_order_for_table,
+            commands::orders::get_order,
+            commands::orders::add_order_item,
+            commands::orders::update_order_item,
+            commands::orders::remove_order_item,
+            commands::orders::cancel_order,
+            commands::orders::transfer_table,
+            commands::orders::merge_tables,
+            commands::orders::list_open_orders,
+            commands::payments::list_discounts,
+            commands::payments::create_discount,
+            commands::payments::update_discount,
+            commands::payments::set_discount_active,
+            commands::payments::apply_discount,
+            commands::payments::remove_order_discount,
+            commands::payments::add_payment,
+            commands::payments::finalize_order,
+            commands::payments::generate_bill_html,
+            commands::payments::generate_bill_pdf,
+            commands::shifts::get_current_shift,
+            commands::shifts::open_shift,
+            commands::shifts::close_shift,
+            commands::reports::report_sales_summary,
+            commands::reports::report_payment_mix,
+            commands::reports::report_top_products,
+            commands::reports::report_discount_total,
+            commands::reports::report_shift_summary,
+            commands::backup::backup_database,
             commands::image::save_product_image,
             commands::image::read_image_data_url,
         ])

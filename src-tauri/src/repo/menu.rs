@@ -386,6 +386,10 @@ mod tests {
         let mut c = Connection::open_in_memory().unwrap();
         c.pragma_update(None, "foreign_keys", "ON").unwrap();
         migrations::run(&mut c).unwrap();
+        c.execute("DELETE FROM product_sizes", []).unwrap();
+        c.execute("DELETE FROM products", []).unwrap();
+        c.execute("DELETE FROM toppings", []).unwrap();
+        c.execute("DELETE FROM categories", []).unwrap();
         c
     }
 

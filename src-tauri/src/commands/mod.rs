@@ -1,4 +1,9 @@
+pub mod backup;
 pub mod image;
 pub mod menu;
+pub mod orders;
+pub mod payments;
+pub mod reports;
 pub mod settings;
+pub mod shifts;
 pub mod tables;
