@@ -1,4 +1,5 @@
 import { createHashRouter, RouterProvider } from "react-router-dom"
+import CustomerDisplay from "@/routes/Customer"
 import Home from "@/routes/Home"
 import Menu from "@/routes/Menu"
 import Payment from "@/routes/Payment"
@@ -17,6 +18,7 @@ const router = createHashRouter([
   { path: "/menu", element: <Menu /> },
   { path: "/tables", element: <Tables /> },
   { path: "/settings", element: <Settings /> },
+  { path: "/customer", element: <CustomerDisplay /> },
 ])
 
 export default function App() {
