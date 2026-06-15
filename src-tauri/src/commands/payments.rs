@@ -1,5 +1,10 @@
-use tauri::State;
+use std::sync::Mutex;
 
+use tauri::{AppHandle, State};
+
+use crate::commands::customer::{
+    emit_customer_update_for_order, set_customer_phase, CustomerDisplayState,
+};
 use crate::db::AppDb;
 use crate::domain::orders::Order;
 use crate::domain::payments::{ApplyDiscountInput, Discount, DiscountInput, PaymentInput};
@@ -41,34 +46,64 @@ pub fn set_discount_active(db: State<AppDb>, id: i64, is_active: bool) -> Result
 
 #[tauri::command]
 pub fn apply_discount(
+    app: AppHandle,
     db: State<AppDb>,
+    cs: State<'_, Mutex<CustomerDisplayState>>,
     order_id: i64,
     payload: ApplyDiscountInput,
 ) -> Result<Order, String> {
-    let conn = lock(&db)?;
-    payments::apply_discount(&conn, order_id, payload).map_err(|e| e.to_string())
+    let order = {
+        let conn = lock(&db)?;
+        payments::apply_discount(&conn, order_id, payload).map_err(|e| e.to_string())?
+    };
+    emit_customer_update_for_order(&app, &db, &cs, order.id)?;
+    Ok(order)
 }
 
 #[tauri::command]
-pub fn remove_order_discount(db: State<AppDb>, order_discount_id: i64) -> Result<Order, String> {
-    let conn = lock(&db)?;
-    payments::remove_order_discount(&conn, order_discount_id).map_err(|e| e.to_string())
+pub fn remove_order_discount(
+    app: AppHandle,
+    db: State<AppDb>,
+    cs: State<'_, Mutex<CustomerDisplayState>>,
+    order_discount_id: i64,
+) -> Result<Order, String> {
+    let order = {
+        let conn = lock(&db)?;
+        payments::remove_order_discount(&conn, order_discount_id).map_err(|e| e.to_string())?
+    };
+    emit_customer_update_for_order(&app, &db, &cs, order.id)?;
+    Ok(order)
 }
 
 #[tauri::command]
 pub fn add_payment(
+    app: AppHandle,
     db: State<AppDb>,
+    cs: State<'_, Mutex<CustomerDisplayState>>,
     order_id: i64,
     payload: PaymentInput,
 ) -> Result<Order, String> {
-    let conn = lock(&db)?;
-    payments::add_payment(&conn, order_id, payload).map_err(|e| e.to_string())
+    let order = {
+        let conn = lock(&db)?;
+        payments::add_payment(&conn, order_id, payload).map_err(|e| e.to_string())?
+    };
+    emit_customer_update_for_order(&app, &db, &cs, order.id)?;
+    Ok(order)
 }
 
 #[tauri::command]
-pub fn finalize_order(db: State<AppDb>, order_id: i64) -> Result<Order, String> {
-    let conn = lock(&db)?;
-    payments::finalize_order(&conn, order_id).map_err(|e| e.to_string())
+pub fn finalize_order(
+    app: AppHandle,
+    db: State<AppDb>,
+    cs: State<'_, Mutex<CustomerDisplayState>>,
+    order_id: i64,
+) -> Result<Order, String> {
+    let order = {
+        let conn = lock(&db)?;
+        payments::finalize_order(&conn, order_id).map_err(|e| e.to_string())?
+    };
+    set_customer_phase(app, db, cs, "thankyou".into())?;
+    Ok(order)
 }
 
 #[tauri::command]

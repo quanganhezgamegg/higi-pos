@@ -1,5 +1,8 @@
-use tauri::State;
+use std::sync::Mutex;
 
+use tauri::{AppHandle, State};
+
+use crate::commands::customer::{emit_customer_update_for_order, CustomerDisplayState};
 use crate::db::AppDb;
 use crate::domain::orders::{CreateOrderInput, Order, OrderItemInput};
 use crate::repo::orders;
@@ -30,50 +33,100 @@ pub fn get_order(db: State<AppDb>, id: i64) -> Result<Order, String> {
 
 #[tauri::command]
 pub fn add_order_item(
+    app: AppHandle,
     db: State<AppDb>,
+    cs: State<'_, Mutex<CustomerDisplayState>>,
     order_id: i64,
     payload: OrderItemInput,
 ) -> Result<Order, String> {
-    let conn = lock(&db)?;
-    orders::add_order_item(&conn, order_id, payload).map_err(|e| e.to_string())
+    let order = {
+        let conn = lock(&db)?;
+        orders::add_order_item(&conn, order_id, payload).map_err(|e| e.to_string())?
+    };
+    emit_customer_update_for_order(&app, &db, &cs, order.id)?;
+    Ok(order)
 }
 
 #[tauri::command]
 pub fn update_order_item(
+    app: AppHandle,
     db: State<AppDb>,
+    cs: State<'_, Mutex<CustomerDisplayState>>,
     item_id: i64,
     payload: OrderItemInput,
 ) -> Result<Order, String> {
-    let conn = lock(&db)?;
-    orders::update_order_item(&conn, item_id, payload).map_err(|e| e.to_string())
+    let order = {
+        let conn = lock(&db)?;
+        orders::update_order_item(&conn, item_id, payload).map_err(|e| e.to_string())?
+    };
+    emit_customer_update_for_order(&app, &db, &cs, order.id)?;
+    Ok(order)
 }
 
 #[tauri::command]
-pub fn remove_order_item(db: State<AppDb>, item_id: i64) -> Result<Order, String> {
-    let conn = lock(&db)?;
-    orders::remove_order_item(&conn, item_id).map_err(|e| e.to_string())
+pub fn remove_order_item(
+    app: AppHandle,
+    db: State<AppDb>,
+    cs: State<'_, Mutex<CustomerDisplayState>>,
+    item_id: i64,
+) -> Result<Order, String> {
+    let order = {
+        let conn = lock(&db)?;
+        orders::remove_order_item(&conn, item_id).map_err(|e| e.to_string())?
+    };
+    emit_customer_update_for_order(&app, &db, &cs, order.id)?;
+    Ok(order)
 }
 
 #[tauri::command]
-pub fn cancel_order(db: State<AppDb>, id: i64) -> Result<Order, String> {
-    let conn = lock(&db)?;
-    orders::cancel_order(&conn, id).map_err(|e| e.to_string())
+pub fn cancel_order(
+    app: AppHandle,
+    db: State<AppDb>,
+    cs: State<'_, Mutex<CustomerDisplayState>>,
+    id: i64,
+) -> Result<Order, String> {
+    let order = {
+        let conn = lock(&db)?;
+        orders::cancel_order(&conn, id).map_err(|e| e.to_string())?
+    };
+    emit_customer_update_for_order(&app, &db, &cs, order.id)?;
+    Ok(order)
 }
 
 #[tauri::command]
-pub fn transfer_table(db: State<AppDb>, order_id: i64, to_table_id: i64) -> Result<Order, String> {
-    let conn = lock(&db)?;
-    orders::transfer_table(&conn, order_id, to_table_id).map_err(|e| e.to_string())
+pub fn transfer_table(
+    app: AppHandle,
+    db: State<AppDb>,
+    cs: State<'_, Mutex<CustomerDisplayState>>,
+    order_id: i64,
+    to_table_id: i64,
+) -> Result<Order, String> {
+    let order = {
+        let conn = lock(&db)?;
+        orders::transfer_table(&conn, order_id, to_table_id).map_err(|e| e.to_string())?
+    };
+    emit_customer_update_for_order(&app, &db, &cs, order.id)?;
+    Ok(order)
 }
 
 #[tauri::command]
 pub fn merge_tables(
+    app: AppHandle,
     db: State<AppDb>,
+    cs: State<'_, Mutex<CustomerDisplayState>>,
     source_order_ids: Vec<i64>,
     target_order_id: i64,
 ) -> Result<Order, String> {
-    let conn = lock(&db)?;
-    orders::merge_tables(&conn, source_order_ids, target_order_id).map_err(|e| e.to_string())
+    let touched_source_ids = source_order_ids.clone();
+    let order = {
+        let conn = lock(&db)?;
+        orders::merge_tables(&conn, source_order_ids, target_order_id).map_err(|e| e.to_string())?
+    };
+    emit_customer_update_for_order(&app, &db, &cs, order.id)?;
+    for source_id in touched_source_ids {
+        emit_customer_update_for_order(&app, &db, &cs, source_id)?;
+    }
+    Ok(order)
 }
 
 #[tauri::command]
