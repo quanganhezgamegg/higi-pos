@@ -163,15 +163,34 @@ pub fn delete_table(conn: &Connection, id: i64) -> rusqlite::Result<()> {
 }
 
 pub fn list_table_status(conn: &Connection) -> rusqlite::Result<Vec<TableStatus>> {
-    let tables = list_tables(conn, None, true)?;
-    Ok(tables
-        .into_iter()
-        .map(|table| TableStatus {
-            table,
-            status: TableState::Trong,
-            open_order_id: None,
+    let mut stmt = conn.prepare(
+        "SELECT t.id, t.area_id, t.name, t.seats, t.sort_order, t.is_active,
+                o.id AS open_order_id
+         FROM tables t
+         LEFT JOIN orders o ON o.table_id = t.id AND o.status = 'OPEN'
+         WHERE t.is_active = 1
+         ORDER BY t.sort_order, t.id",
+    )?;
+    let rows = stmt.query_map([], |row| {
+        let open_order_id: Option<i64> = row.get("open_order_id")?;
+        Ok(TableStatus {
+            table: Table {
+                id: row.get("id")?,
+                area_id: row.get("area_id")?,
+                name: row.get("name")?,
+                seats: row.get("seats")?,
+                sort_order: row.get("sort_order")?,
+                is_active: row.get::<_, i64>("is_active")? != 0,
+            },
+            status: if open_order_id.is_some() {
+                TableState::DangPhucVu
+            } else {
+                TableState::Trong
+            },
+            open_order_id,
         })
-        .collect())
+    })?;
+    rows.collect()
 }
 
 #[cfg(test)]
@@ -183,6 +202,9 @@ mod tests {
         let mut c = Connection::open_in_memory().unwrap();
         c.pragma_update(None, "foreign_keys", "ON").unwrap();
         migrations::run(&mut c).unwrap();
+        c.execute("DELETE FROM orders", []).unwrap();
+        c.execute("DELETE FROM tables", []).unwrap();
+        c.execute("DELETE FROM areas", []).unwrap();
         c
     }
 
@@ -309,10 +331,10 @@ mod tests {
     }
 
     #[test]
-    fn list_table_status_returns_trong_in_m2() {
+    fn list_table_status_reflects_open_orders() {
         let c = conn();
         let area = seed_area(&c);
-        create_table(
+        let table = create_table(
             &c,
             TableInput {
                 area_id: area.id,
@@ -324,8 +346,23 @@ mod tests {
         .unwrap();
 
         let statuses = list_table_status(&c).unwrap();
-        assert_eq!(statuses.len(), 1);
-        assert!(matches!(statuses[0].status, TableState::Trong));
-        assert!(statuses[0].open_order_id.is_none());
+        assert!(statuses.iter().any(|status| status.table.id == table.id
+            && matches!(status.status, TableState::Trong)
+            && status.open_order_id.is_none()));
+
+        c.execute(
+            "INSERT INTO orders(code, order_type, table_id, status, created_at)
+             VALUES ('TBL-1', 'DINE_IN', ?1, 'OPEN', '2026-01-01T08:00:00Z')",
+            [table.id],
+        )
+        .unwrap();
+        let open_order_id = c.last_insert_rowid();
+        let statuses = list_table_status(&c).unwrap();
+        let status = statuses
+            .into_iter()
+            .find(|status| status.table.id == table.id)
+            .unwrap();
+        assert!(matches!(status.status, TableState::DangPhucVu));
+        assert_eq!(status.open_order_id, Some(open_order_id));
     }
 }
