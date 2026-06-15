@@ -1,13 +1,7 @@
 use qrcode::render::svg;
 use qrcode::{EcLevel, QrCode};
-use serde::Serialize;
 
-#[derive(Debug, Clone, Serialize)]
-pub struct Bank {
-    pub bin: String,
-    pub name: String,
-    pub short_name: String,
-}
+use crate::domain::customer::Bank;
 
 pub fn list_banks() -> Vec<Bank> {
     vec![

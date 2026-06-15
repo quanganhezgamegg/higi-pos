@@ -1,3 +1,4 @@
+pub mod customer;
 pub mod menu;
 pub mod orders;
 pub mod payments;
