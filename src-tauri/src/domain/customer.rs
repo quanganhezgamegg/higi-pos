@@ -8,7 +8,7 @@ pub enum CustomerPhase {
     Idle,
     Order,
     Payment,
-    Thankyou,
+    ThankYou,
 }
 
 impl Default for CustomerPhase {
