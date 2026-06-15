@@ -1,6 +1,6 @@
 use std::sync::Mutex;
 
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, Manager, State};
 
 use crate::commands::customer::{
     emit_customer_update_for_order, set_customer_phase, CustomerDisplayState,
@@ -107,9 +107,15 @@ pub fn finalize_order(
 }
 
 #[tauri::command]
-pub fn generate_bill_html(db: State<AppDb>, order_id: i64) -> Result<String, String> {
+pub fn generate_bill_html(
+    app: AppHandle,
+    db: State<AppDb>,
+    order_id: i64,
+) -> Result<String, String> {
     let conn = lock(&db)?;
-    payments::generate_bill_html(&conn, order_id).map_err(|e| e.to_string())
+    let app_data_dir = app.path().app_data_dir().ok();
+    payments::generate_bill_html(&conn, order_id, app_data_dir.as_deref())
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]

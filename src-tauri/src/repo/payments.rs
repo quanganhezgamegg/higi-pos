@@ -1,3 +1,4 @@
+use base64::Engine;
 use rusqlite::{params, Connection};
 
 use crate::domain::payments::*;
@@ -269,13 +270,21 @@ pub fn finalize_order(
     orders::mark_paid(conn, order_id)
 }
 
-pub fn generate_bill_html(conn: &Connection, order_id: i64) -> rusqlite::Result<String> {
+pub fn generate_bill_html(
+    conn: &Connection,
+    order_id: i64,
+    app_data_dir: Option<&std::path::Path>,
+) -> rusqlite::Result<String> {
     let order = orders::get_order(conn, order_id)?;
     let shop_name = settings::get_setting(conn, "shop_name")?.unwrap_or_else(|| "HiGi POS".into());
     let shop_address = settings::get_setting(conn, "shop_address")?.unwrap_or_default();
     let shop_phone = settings::get_setting(conn, "shop_phone")?.unwrap_or_default();
     let footer =
         settings::get_setting(conn, "bill_footer")?.unwrap_or_else(|| "Cảm ơn quý khách".into());
+    let brand_color =
+        settings::get_setting(conn, "brand_color")?.unwrap_or_else(|| "#6F4E37".into());
+    let logo_path = settings::get_setting(conn, "logo_path")?.unwrap_or_default();
+    let logo_html = logo_html(app_data_dir, &logo_path);
     let rows = order
         .items
         .iter()
@@ -292,15 +301,18 @@ pub fn generate_bill_html(conn: &Connection, order_id: i64) -> rusqlite::Result<
         r#"<!doctype html>
 <html><head><meta charset="utf-8"><title>Bill {code}</title>
 <style>
+:root {{ --brand: {brand_color}; }}
 body {{ font-family: Arial, sans-serif; max-width: 320px; margin: 0 auto; color: #111; }}
-h1 {{ font-size: 18px; text-align: center; margin: 8px 0; }}
+h1 {{ color: var(--brand); font-size: 18px; text-align: center; margin: 8px 0; }}
 p {{ margin: 4px 0; font-size: 12px; }}
 table {{ width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; }}
 td {{ border-bottom: 1px dashed #ccc; padding: 6px 0; }}
-.total {{ font-size: 16px; font-weight: bold; }}
+.logo {{ display: block; max-height: 72px; max-width: 96px; margin: 0 auto 6px; object-fit: contain; }}
+.total {{ color: var(--brand); font-size: 16px; font-weight: bold; }}
 @media print {{ body {{ margin: 0; }} button {{ display: none; }} }}
 </style></head>
 <body>
+{logo_html}
 <h1>{shop_name}</h1>
 <p>{shop_address}</p>
 <p>{shop_phone}</p>
@@ -316,6 +328,8 @@ td {{ border-bottom: 1px dashed #ccc; padding: 6px 0; }}
         shop_name = html_escape(&shop_name),
         shop_address = html_escape(&shop_address),
         shop_phone = html_escape(&shop_phone),
+        brand_color = html_escape(&brand_color),
+        logo_html = logo_html,
         rows = rows,
         subtotal = order.subtotal,
         discount = order.discount_total,
@@ -335,6 +349,37 @@ fn html_escape(value: &str) -> String {
         .replace('<', "&lt;")
         .replace('>', "&gt;")
         .replace('"', "&quot;")
+}
+
+fn logo_html(app_data_dir: Option<&std::path::Path>, logo_path: &str) -> String {
+    let Some(app_data_dir) = app_data_dir else {
+        return String::new();
+    };
+    let normalized = logo_path.replace('\\', "/");
+    if normalized.trim().is_empty()
+        || !normalized.starts_with("images/")
+        || normalized.contains("..")
+    {
+        return String::new();
+    }
+
+    let full_path = app_data_dir.join(&normalized);
+    let Ok(bytes) = std::fs::read(&full_path) else {
+        return String::new();
+    };
+    let mime = match full_path
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .unwrap_or("png")
+        .to_ascii_lowercase()
+        .as_str()
+    {
+        "jpg" | "jpeg" => "image/jpeg",
+        "webp" => "image/webp",
+        _ => "image/png",
+    };
+    let encoded = base64::engine::general_purpose::STANDARD.encode(bytes);
+    format!("<img class=\"logo\" src=\"data:{mime};base64,{encoded}\" alt=\"logo\">")
 }
 
 #[cfg(test)]
@@ -440,5 +485,18 @@ mod tests {
         assert_eq!(order.payments[0].change_due, Some(50_000));
         let paid = finalize_order(&c, order_id).unwrap();
         assert_eq!(paid.status, crate::domain::orders::OrderStatus::Paid);
+    }
+
+    #[test]
+    fn bill_html_applies_branding_settings() {
+        let c = conn();
+        let order_id = order_with_item(&c);
+        settings::set_setting(&c, "brand_color", "#112233").unwrap();
+        settings::set_setting(&c, "bill_footer", "See you again").unwrap();
+
+        let html = generate_bill_html(&c, order_id, None).unwrap();
+
+        assert!(html.contains("#112233"));
+        assert!(html.contains("See you again"));
     }
 }
