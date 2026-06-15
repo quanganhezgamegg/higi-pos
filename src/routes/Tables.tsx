@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -24,6 +24,7 @@ import TableCard from "@/routes/tables/TableCard"
 import TableForm from "@/routes/tables/TableForm"
 
 export default function Tables() {
+  const navigate = useNavigate()
   const [areas, setAreas] = useState<Area[]>([])
   const [statuses, setStatuses] = useState<TableStatus[]>([])
   const [addOpen, setAddOpen] = useState(false)
@@ -92,6 +93,15 @@ export default function Tables() {
     return statuses.filter((status) => status.table.area_id === areaId)
   }
 
+  function openTable(status: TableStatus) {
+    if (!status.table.is_active) return
+    if (status.open_order_id) {
+      navigate(`/payment/${status.open_order_id}`)
+      return
+    }
+    navigate(`/sales?tableId=${status.table.id}`)
+  }
+
   function renderTableGrid(items: TableStatus[], emptyLabel: string) {
     if (items.length === 0) {
       return <p className="py-6 text-sm text-muted-foreground">{emptyLabel}</p>
@@ -106,6 +116,7 @@ export default function Tables() {
             table={status.table}
             onDelete={(table) => void onDelete(table)}
             onEdit={onEdit}
+            onOpen={() => openTable(status)}
             onToggleActive={(table) => void onToggleActive(table)}
           />
         ))}
