@@ -1,3 +1,4 @@
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use rusqlite::{params, Connection, OptionalExtension};
@@ -6,6 +7,8 @@ use crate::domain::orders::*;
 use crate::domain::payments::{DiscountType, OrderDiscount, Payment, PaymentMethod};
 use crate::repo::{settings, shifts};
 use crate::services::{order, payment};
+
+static ORDER_CODE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
 fn now_iso(conn: &Connection) -> rusqlite::Result<String> {
     conn.query_row("SELECT strftime('%Y-%m-%dT%H:%M:%SZ','now')", [], |row| {
@@ -18,7 +21,8 @@ fn next_code() -> String {
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_millis())
         .unwrap_or_default();
-    format!("ORD-{millis}")
+    let sequence = ORDER_CODE_SEQUENCE.fetch_add(1, Ordering::Relaxed);
+    format!("ORD-{millis}-{}-{sequence}", std::process::id())
 }
 
 fn order_type_to_str(value: &OrderType) -> &'static str {
