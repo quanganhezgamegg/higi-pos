@@ -2,19 +2,14 @@ use serde::{Deserialize, Serialize};
 
 use crate::domain::orders::OrderType;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum CustomerPhase {
+    #[default]
     Idle,
     Order,
     Payment,
     ThankYou,
-}
-
-impl Default for CustomerPhase {
-    fn default() -> Self {
-        Self::Idle
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
