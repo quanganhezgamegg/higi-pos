@@ -93,7 +93,7 @@ pub fn rebuild_view(
     };
 
     let payment = if matches!(phase, CustomerPhase::Payment) {
-        build_payment_view(conn, order_id).map(Some)?
+        build_payment_view(conn, order_id).ok()
     } else {
         None
     };
@@ -365,5 +365,63 @@ fn phase_to_str(phase: &CustomerPhase) -> &'static str {
         CustomerPhase::Order => "order",
         CustomerPhase::Payment => "payment",
         CustomerPhase::ThankYou => "thankyou",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use rusqlite::Connection;
+
+    use super::*;
+    use crate::db::migrations;
+    use crate::domain::orders::{CreateOrderInput, OrderItemInput};
+
+    fn conn() -> Connection {
+        let mut conn = Connection::open_in_memory().unwrap();
+        conn.pragma_update(None, "foreign_keys", "ON").unwrap();
+        migrations::run(&mut conn).unwrap();
+        conn
+    }
+
+    fn order_id(conn: &Connection) -> i64 {
+        let order = orders::create_order(
+            conn,
+            CreateOrderInput {
+                order_type: OrderType::Takeaway,
+                table_id: None,
+                note: None,
+            },
+        )
+        .unwrap();
+        orders::add_order_item(
+            conn,
+            order.id,
+            OrderItemInput {
+                product_id: None,
+                product_name: "Ca phe sua".into(),
+                size_name: None,
+                unit_price: 30_000,
+                quantity: 1,
+                sugar_level: None,
+                ice_level: None,
+                line_note: None,
+                line_discount: 0,
+                toppings: vec![],
+            },
+        )
+        .unwrap()
+        .id
+    }
+
+    #[test]
+    fn payment_view_without_bank_config_keeps_order_without_qr() {
+        let conn = conn();
+        let order_id = order_id(&conn);
+
+        let view = rebuild_view(&conn, order_id, &CustomerPhase::Payment).unwrap();
+
+        assert_eq!(view.phase, CustomerPhase::Payment);
+        assert!(view.order.is_some());
+        assert!(view.payment.is_none());
     }
 }
