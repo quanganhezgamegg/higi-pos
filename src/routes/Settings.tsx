@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
+import { emit } from "@tauri-apps/api/event"
+import { open } from "@tauri-apps/plugin-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
+import { closeCustomerDisplay, openCustomerDisplay } from "@/lib/api/customer"
 import { formatVnd } from "@/lib/format"
+import { listBanks, saveBrandingImage, type Bank } from "@/lib/api/branding"
 import {
   appVersion,
   backupDatabase,
@@ -25,6 +29,14 @@ const settingKeys = [
   "shop_address",
   "shop_phone",
   "bill_footer",
+  "brand_color",
+  "logo_path",
+  "idle_bg_path",
+  "promo_images",
+  "customer_welcome_text",
+  "bank_bin",
+  "bank_account_number",
+  "bank_account_name",
   "default_backup_dir",
   "sugar_levels",
   "ice_levels",
@@ -42,6 +54,7 @@ const emptyDiscount: DiscountInput = {
 
 export default function Settings() {
   const [settings, setSettings] = useState<Record<string, string>>({})
+  const [banks, setBanks] = useState<Bank[]>([])
   const [discounts, setDiscounts] = useState<Discount[]>([])
   const [discountForm, setDiscountForm] = useState<DiscountInput>(emptyDiscount)
   const [editingDiscountId, setEditingDiscountId] = useState<number | null>(null)
@@ -53,14 +66,16 @@ export default function Settings() {
   async function refresh() {
     setError(null)
     try {
-      const [values, nextDiscounts, nextVersion] = await Promise.all([
+      const [values, nextDiscounts, nextVersion, nextBanks] = await Promise.all([
         getSettingsBulk(settingKeys),
         listDiscounts(true),
         appVersion(),
+        listBanks(),
       ])
       setSettings(Object.fromEntries(values.map((item) => [item.key, item.value ?? ""])))
       setDiscounts(nextDiscounts)
       setVersion(nextVersion)
+      setBanks(nextBanks)
       setBackupPath(values.find((item) => item.key === "default_backup_dir")?.value ?? "")
     } catch (e) {
       setError(String(e))
@@ -68,11 +83,12 @@ export default function Settings() {
   }
 
   useEffect(() => {
-    Promise.all([getSettingsBulk(settingKeys), listDiscounts(true), appVersion()])
-      .then(([values, nextDiscounts, nextVersion]) => {
+    Promise.all([getSettingsBulk(settingKeys), listDiscounts(true), appVersion(), listBanks()])
+      .then(([values, nextDiscounts, nextVersion, nextBanks]) => {
         setSettings(Object.fromEntries(values.map((item) => [item.key, item.value ?? ""])))
         setDiscounts(nextDiscounts)
         setVersion(nextVersion)
+        setBanks(nextBanks)
         setBackupPath(values.find((item) => item.key === "default_backup_dir")?.value ?? "")
       })
       .catch((e) => setError(String(e)))
@@ -90,7 +106,63 @@ export default function Settings() {
         sugar_levels: splitCsv(settings.sugar_levels),
         ice_levels: splitCsv(settings.ice_levels),
       })
+      await emit("branding://update")
       await refresh()
+    } catch (e) {
+      setError(String(e))
+    }
+  }
+
+  async function persistSetting(key: string, value: string) {
+    setError(null)
+    try {
+      await setSettingsBulk([{ key, value }])
+      setValue(key, value)
+      await emit("branding://update")
+    } catch (e) {
+      setError(String(e))
+    }
+  }
+
+  async function pickBrandingImage(key: "logo_path" | "idle_bg_path", kind: string) {
+    const selected = await open({
+      multiple: false,
+      filters: [{ name: "Image", extensions: ["png", "jpg", "jpeg", "webp"] }],
+    })
+    if (!selected || typeof selected !== "string") return
+    const relativePath = await saveBrandingImage(selected, kind)
+    await persistSetting(key, relativePath)
+  }
+
+  async function addPromoImage() {
+    const selected = await open({
+      multiple: false,
+      filters: [{ name: "Image", extensions: ["png", "jpg", "jpeg", "webp"] }],
+    })
+    if (!selected || typeof selected !== "string") return
+    const relativePath = await saveBrandingImage(selected, "promo")
+    const next = [...promoImages(settings.promo_images), relativePath]
+    await persistSetting("promo_images", JSON.stringify(next))
+  }
+
+  async function removePromoImage(path: string) {
+    const next = promoImages(settings.promo_images).filter((item) => item !== path)
+    await persistSetting("promo_images", JSON.stringify(next))
+  }
+
+  async function openDisplay() {
+    setError(null)
+    try {
+      await openCustomerDisplay()
+    } catch (e) {
+      setError(String(e))
+    }
+  }
+
+  async function closeDisplay() {
+    setError(null)
+    try {
+      await closeCustomerDisplay()
     } catch (e) {
       setError(String(e))
     }
@@ -175,6 +247,135 @@ export default function Settings() {
         <Button className="w-fit" onClick={saveSettings}>
           Lưu cài đặt
         </Button>
+      </section>
+
+      <section className="grid gap-4 rounded-lg border bg-background p-4">
+        <div>
+          <h2 className="font-semibold">Ca nhan hoa thuong hieu</h2>
+          <p className="text-sm text-muted-foreground">Ap dung cho man hinh khach va hoa don.</p>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-[180px_1fr_auto] md:items-center">
+          <span className="text-sm font-medium">Mau thuong hieu</span>
+          <div className="flex items-center gap-3">
+            <Input
+              className="h-10 w-16 p-1"
+              type="color"
+              value={settings.brand_color || "#6F4E37"}
+              onChange={(event) => setValue("brand_color", event.target.value)}
+            />
+            <Input
+              value={settings.brand_color || "#6F4E37"}
+              onChange={(event) => setValue("brand_color", event.target.value)}
+            />
+          </div>
+          <Button variant="outline" onClick={saveSettings}>
+            Luu mau
+          </Button>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-[180px_1fr_auto] md:items-center">
+          <span className="text-sm font-medium">Logo quan</span>
+          <Input readOnly value={settings.logo_path ?? ""} placeholder="Chua chon logo" />
+          <Button variant="outline" onClick={() => void pickBrandingImage("logo_path", "logo")}>
+            Chon logo
+          </Button>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-[180px_1fr_auto] md:items-center">
+          <span className="text-sm font-medium">Anh nen man cho</span>
+          <Input readOnly value={settings.idle_bg_path ?? ""} placeholder="Chua chon anh nen" />
+          <Button
+            variant="outline"
+            onClick={() => void pickBrandingImage("idle_bg_path", "idle_bg")}
+          >
+            Chon anh
+          </Button>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-[180px_1fr]">
+          <span className="text-sm font-medium">Loi chao</span>
+          <Input
+            placeholder="Chao mung quy khach"
+            value={settings.customer_welcome_text ?? ""}
+            onChange={(event) => setValue("customer_welcome_text", event.target.value)}
+          />
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-[180px_1fr]">
+          <span className="text-sm font-medium">Anh khuyen mai</span>
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-2">
+              {promoImages(settings.promo_images).map((path) => (
+                <div
+                  key={path}
+                  className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm"
+                >
+                  <span className="max-w-64 truncate">{path}</span>
+                  <Button variant="outline" size="sm" onClick={() => void removePromoImage(path)}>
+                    Xoa
+                  </Button>
+                </div>
+              ))}
+            </div>
+            <Button variant="outline" onClick={() => void addPromoImage()}>
+              Them anh khuyen mai
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-4 rounded-lg border bg-background p-4">
+        <div>
+          <h2 className="font-semibold">Man hinh khach & VietQR</h2>
+          <p className="text-sm text-muted-foreground">
+            Cau hinh cua so phu va tai khoan nhan chuyen khoan.
+          </p>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-[180px_1fr] md:items-center">
+          <span className="text-sm font-medium">Ngan hang</span>
+          <select
+            className="h-10 rounded-md border bg-background px-3 text-sm"
+            value={settings.bank_bin ?? ""}
+            onChange={(event) => setValue("bank_bin", event.target.value)}
+          >
+            <option value="">Chon ngan hang</option>
+            {banks.map((bank) => (
+              <option key={bank.bin} value={bank.bin}>
+                {bank.short_name} ({bank.bin})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-[180px_1fr]">
+          <span className="text-sm font-medium">So tai khoan</span>
+          <Input
+            value={settings.bank_account_number ?? ""}
+            onChange={(event) => setValue("bank_account_number", event.target.value)}
+            placeholder="1234567890"
+          />
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-[180px_1fr]">
+          <span className="text-sm font-medium">Ten tai khoan</span>
+          <Input
+            value={settings.bank_account_name ?? ""}
+            onChange={(event) => setValue("bank_account_name", event.target.value)}
+            placeholder="HIGI COFFEE"
+          />
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={saveSettings}>Luu cau hinh VietQR</Button>
+          <Button variant="outline" onClick={() => void openDisplay()}>
+            Mo man hinh khach
+          </Button>
+          <Button variant="outline" onClick={() => void closeDisplay()}>
+            Dong man hinh khach
+          </Button>
+        </div>
       </section>
 
       <section className="grid gap-3 rounded-lg border bg-background p-4">
@@ -281,4 +482,16 @@ function splitCsv(value?: string) {
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean)
+}
+
+function promoImages(value?: string) {
+  if (!value) return []
+  try {
+    const parsed = JSON.parse(value)
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === "string")
+      : []
+  } catch {
+    return []
+  }
 }

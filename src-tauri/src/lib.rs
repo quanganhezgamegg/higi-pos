@@ -7,6 +7,7 @@ mod services;
 use std::sync::Mutex;
 use tauri::Manager;
 
+use crate::commands::customer::CustomerDisplayState;
 use crate::db::AppDb;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -26,6 +27,7 @@ pub fn run() {
             let db_path = dir.join("higipos.db");
             let conn = db::open_and_migrate(&db_path)?;
             app.manage(AppDb(Mutex::new(conn)));
+            app.manage(Mutex::new(CustomerDisplayState::default()));
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -91,6 +93,15 @@ pub fn run() {
             commands::backup::backup_database,
             commands::image::save_product_image,
             commands::image::read_image_data_url,
+            commands::customer::open_customer_display,
+            commands::customer::close_customer_display,
+            commands::customer::get_customer_view,
+            commands::customer::set_customer_order,
+            commands::customer::set_customer_phase,
+            commands::customer::get_payment_qr,
+            commands::customer::list_banks,
+            commands::customer::get_branding,
+            commands::customer::save_branding_image,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

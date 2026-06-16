@@ -31,6 +31,7 @@ import {
   type OrderItemInput,
   type OrderType,
 } from "@/lib/api/orders"
+import { setCustomerOrder } from "@/lib/api/customer"
 import { getCurrentShift, type Shift } from "@/lib/api/shifts"
 import { listTableStatus, type TableStatus } from "@/lib/api/tables"
 
@@ -132,6 +133,7 @@ export default function Sales() {
     setLoading(true)
     try {
       let order = await createOrder({ order_type: orderType, table_id: tableId, note: null })
+      await setCustomerOrder(order.id, "order")
       for (const item of cart) {
         const payload: OrderItemInput = {
           product_id: item.product_id,
@@ -356,7 +358,10 @@ export default function Sales() {
                       key={order.id}
                       variant="outline"
                       className="justify-between"
-                      onClick={() => navigate(`/payment/${order.id}`)}
+                      onClick={() => {
+                        void setCustomerOrder(order.id, "payment")
+                        navigate(`/payment/${order.id}`)
+                      }}
                     >
                       <span>{order.code}</span>
                       <span className="inline-flex items-center gap-1">

@@ -1,4 +1,5 @@
 pub mod backup;
+pub mod customer;
 pub mod image;
 pub mod menu;
 pub mod orders;

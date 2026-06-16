@@ -28,6 +28,7 @@ import {
   type PaymentMethod,
 } from "@/lib/api/payments"
 import { listTableStatus, type TableStatus } from "@/lib/api/tables"
+import { setCustomerOrder, setCustomerPhase } from "@/lib/api/customer"
 
 function toOrderItemInput(item: OrderItem, quantity = item.quantity): OrderItemInput {
   return {
@@ -147,6 +148,7 @@ export default function Payment() {
               ? String(mergeTarget)
               : "",
         )
+        void setCustomerOrder(id, "payment").catch(console.error)
       })
       .catch((e) => {
         if (active) setError(String(e))
@@ -233,7 +235,14 @@ export default function Payment() {
   async function cancelCurrentOrder() {
     if (!order) return
     if (!window.confirm("Hủy đơn hiện tại?")) return
-    await runOrderAction(() => cancelOrder(order.id), { navigateTo: "/sales" })
+    await runOrderAction(
+      async () => {
+        const cancelled = await cancelOrder(order.id)
+        await setCustomerPhase("idle")
+        return cancelled
+      },
+      { navigateTo: "/sales" },
+    )
   }
 
   async function transferCurrentOrder() {
@@ -258,6 +267,7 @@ export default function Payment() {
     try {
       const merged = await mergeTables([order.id], targetOrderId)
       setOrder(merged)
+      await setCustomerOrder(merged.id, "payment")
       navigate(`/payment/${merged.id}`)
     } catch (e) {
       setError(String(e))
