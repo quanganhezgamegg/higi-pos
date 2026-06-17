@@ -333,7 +333,7 @@ export default function Payment() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-muted/20">
+    <div className="flex h-full flex-col bg-muted/20">
       <header className="flex items-center justify-between border-b bg-background px-5 py-3">
         <div>
           <h1 className="text-xl font-bold">Thanh toán {order.code}</h1>
