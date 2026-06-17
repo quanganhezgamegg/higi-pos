@@ -44,14 +44,23 @@ Phần mềm POS bán hàng tại quầy cho một quán cà phê. Windows deskt
 
 ## Tài liệu
 
-- Spec thiết kế: `docs/superpowers/specs/2026-06-12-higi-pos-design.md`
-- Kế hoạch theo milestone: `docs/superpowers/plans/` (M0 = nền tảng & CI/CD; M1 menu; M2 bàn; M3 bán hàng lõi; M4 thanh toán/bill/KM; M5 ca & đối soát; M6 báo cáo; M7 cài đặt & backup)
+- Spec sản phẩm: `docs/superpowers/specs/2026-06-12-higi-pos-design.md`
+- **UI Design Spec (chuẩn giao diện — BẮT BUỘC bám):** `docs/superpowers/specs/2026-06-16-ui-design-spec.md` + reference hình ảnh `docs/design/src/app/App.tsx` & `docs/design/src/styles/theme.css` (Figma Make, tông nâu cà phê).
+- Hợp đồng migration/command dùng chung: `docs/superpowers/plans/2026-06-13-m2-m7-contract.md`
+- Kế hoạch theo milestone (`docs/superpowers/plans/`):
+  - M0 nền tảng & CI/CD · M1 menu · M2 bàn · M3 bán hàng lõi · M4 thanh toán/bill/KM · M5 ca & đối soát · M6 báo cáo · M7 cài đặt & backup — **đã xong (≤ v1.0.x)**
+  - M8 màn hình khách + branding + VietQR offline — **đã xong**
+  - M9 màn bán hàng kiểu POS365 (3-pane) — **đã xong (v1.1.2)**
+  - **M9b** app shell (nav rail + header) + Dashboard KPI + fix chuỗi thiếu dấu: `2026-06-17-m9b-appshell-dashboard.md` — **TODO (làm trước)**
+  - M10 kho & công thức: `2026-06-15-m10-inventory.md` — **TODO**
+  - M11 khách hàng & tích điểm: `2026-06-15-m11-loyalty.md` — **TODO**
 
 ## Quy trình làm việc & bàn giao (Claude ↔ Codex)
 
-- Dự án phát triển theo **milestone** (M0 → M7, xem `docs/superpowers/plans/`). Mỗi milestone: brainstorm → spec/plan → thực thi từng task (TDD) → PR → CI xanh → merge.
-- Làm việc cùng Claude tới khi đạt **~80% ngưỡng token**, sau đó **bàn giao sang Codex** code tiếp. Codex tiếp nối bằng cách đọc **file này** + `docs/superpowers/{specs,plans}` và tuân kiến trúc/quy trình ở trên.
-- **Trạng thái hiện tại:** M0–M2 đã release tới `v0.3.0`. Nhánh `feat/v1-pos-complete` triển khai M3–M7 cho bản `v1.0.0`: bán hàng, thanh toán/bill, ca/đối soát, báo cáo, cài đặt/backup và seed menu HiGi từ `menu.jpg`. Sau khi CI xanh, merge PR rồi tag `v1.0.0` để build production release.
+- Dự án phát triển theo **milestone** (M0 → M11, xem `docs/superpowers/plans/`). Mỗi milestone: brainstorm → spec/plan → thực thi từng task (TDD) → PR → CI xanh → merge.
+- Claude lo brainstorm/spec/**plan**; **Codex thực thi code + release**. Codex tiếp nối bằng cách đọc **file này** + `docs/superpowers/{specs,plans}` và tuân kiến trúc/quy trình ở trên.
+- **Trạng thái hiện tại (cập nhật 2026-06-17):** đang ở **`v1.1.2`**. Đã xong & release M0–M9 (bán hàng/thanh toán/ca/báo cáo/cài đặt + M8 màn khách & VietQR + M9 sales UI 3-pane tông nâu cà phê, không VAT). Migrations đã có: `0001`–`0007`.
+- **Việc tiếp theo cho Codex (theo thứ tự):** ① **M9b** — plan `docs/superpowers/plans/2026-06-17-m9b-appshell-dashboard.md` (app shell nav rail + header + Dashboard KPI + fix 3 chuỗi thiếu dấu; KHÔNG thêm command/migration); ② **M10** kho & công thức; ③ **M11** khách hàng & tích điểm. Sau mỗi milestone: PR → CI xanh → merge → bump version + tag release.
 - **Git/credential:** `main` được branch-protected (bắt buộc PR + CI checks `frontend`/`rust`, cấm push thẳng). Để push, credential GitHub lưu **ngoài repo** (Git Credential Manager trên Windows) — KHÔNG bao giờ commit token/PAT vào repo.
 
 ## Cập nhật file này mỗi khi có quyết định/quy ước/cấu trúc mới.
