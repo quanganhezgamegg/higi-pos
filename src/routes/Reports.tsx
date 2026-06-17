@@ -57,7 +57,7 @@ export default function Reports() {
   }, [])
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-4 p-6">
+    <div className="mx-auto flex max-w-5xl flex-col gap-4 p-6">
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Báo cáo doanh thu</h1>

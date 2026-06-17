@@ -1,4 +1,5 @@
 import { createHashRouter, RouterProvider } from "react-router-dom"
+import { AppLayout } from "@/components/layout/AppLayout"
 import CustomerDisplay from "@/routes/Customer"
 import Home from "@/routes/Home"
 import Menu from "@/routes/Menu"
@@ -10,14 +11,19 @@ import ShiftScreen from "@/routes/Shift"
 import Tables from "@/routes/Tables"
 
 const router = createHashRouter([
-  { path: "/", element: <Home /> },
-  { path: "/sales", element: <Sales /> },
-  { path: "/payment/:orderId", element: <Payment /> },
-  { path: "/shift", element: <ShiftScreen /> },
-  { path: "/reports", element: <Reports /> },
-  { path: "/menu", element: <Menu /> },
-  { path: "/tables", element: <Tables /> },
-  { path: "/settings", element: <Settings /> },
+  {
+    element: <AppLayout />,
+    children: [
+      { path: "/", element: <Home /> },
+      { path: "/sales", element: <Sales /> },
+      { path: "/payment/:orderId", element: <Payment /> },
+      { path: "/shift", element: <ShiftScreen /> },
+      { path: "/reports", element: <Reports /> },
+      { path: "/menu", element: <Menu /> },
+      { path: "/tables", element: <Tables /> },
+      { path: "/settings", element: <Settings /> },
+    ],
+  },
   { path: "/customer", element: <CustomerDisplay /> },
 ])
 

@@ -44,7 +44,7 @@ export function ProductGrid({ products, toppings, onOpenDialog }: ProductGridPro
   if (products.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-        Khong co mon nao
+        Không có món nào
       </div>
     )
   }
@@ -88,7 +88,7 @@ function ProductCard({
           <p className="line-clamp-2 font-bold leading-tight">{product.name}</p>
           {!isQuickAdd && (
             <p className="mt-1 text-xs text-muted-foreground">
-              {product.sizes.length > 1 ? "Chon size" : "Co topping"}
+              {product.sizes.length > 1 ? "Chọn size" : "Có topping"}
             </p>
           )}
         </div>

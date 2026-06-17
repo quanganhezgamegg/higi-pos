@@ -129,7 +129,7 @@ export default function Sales() {
 
   if (shift === null) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background p-6 text-center">
+      <div className="flex h-full flex-col items-center justify-center gap-4 bg-background p-6 text-center">
         <h1 className="text-2xl font-bold">Chưa mở ca làm việc</h1>
         <p className="max-w-md text-sm text-muted-foreground">
           Bạn cần mở ca trước khi bắt đầu bán hàng để đơn được gắn đúng ca đối soát.
@@ -143,7 +143,7 @@ export default function Sales() {
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-muted">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-muted">
       <TopBar
         freeTables={freeTables}
         orderType={orderType}
