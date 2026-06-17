@@ -33,7 +33,13 @@
 - `src/lib/api/shifts.ts` → `getCurrentShift()` (M5) — header hiển thị trạng thái ca.
 - `src/lib/api/branding.ts` / `src/lib/api/settings.ts` (M7/M8) — tên quán/logo cho header nếu đã có; nếu chưa tiện thì hardcode "HiGi POS" + icon `Coffee`.
 - `src/lib/format.ts` → `formatVnd`.
-- **Cách dựng khoảng ngày (range):** COPY y nguyên cách `src/routes/Reports.tsx` (M6) build `ReportRangeInput.from/to` — KHÔNG tự chế format ngày mới, để khớp đúng định dạng Rust side mong đợi.
+- **Định dạng range (BẮT BUỘC đúng, nếu sai backend trả rỗng → KPI = 0):** `Reports.tsx` (M6) dùng `from: "YYYY-MM-DDT00:00:00Z"`, `to: "YYYY-MM-DDT23:59:59Z"`, `shift_id: null` (hậu tố `Z` = UTC — GIỮ NGUYÊN để khớp hành vi backend). Lưu ý: `Reports.tsx` **lấy ngày từ input người dùng, KHÔNG tự sinh** — Dashboard phải tự sinh `YYYY-MM-DD`. Helper gợi ý:
+  ```ts
+  const ymd = (d: Date) => d.toISOString().slice(0, 10) // "2026-06-17"
+  const dayRange = (d: Date) => ({
+    from: `${ymd(d)}T00:00:00Z`, to: `${ymd(d)}T23:59:59Z`, shift_id: null,
+  })
+  ```
 
 **Phụ thuộc chưa có (xử lý mềm):**
 - "Sắp hết hàng" cần **M10 (kho)** → CHƯA có API. Render panel với **empty-state** "Chưa bật quản lý kho (M10)" + để `// TODO(M10): nối low-stock` . Giữ khung panel cho đúng visual.
@@ -43,7 +49,7 @@
 
 ## Thư viện cần thêm
 
-- [ ] `recharts` (cho AreaChart Dashboard) — `npm i recharts`. (Spec §5 đã yêu cầu; `lucide-react` đã có sẵn.)
+- [ ] `recharts` (cho AreaChart Dashboard) — cài bản **hỗ trợ React 19** (recharts ≥2.15; 3.x càng tốt). App đang dùng React 19.2 → nếu `npm i recharts` báo peerDeps kẹt, chọn version tương thích React 19, KHÔNG dùng `--force` bừa. (Spec §5 đã yêu cầu; `lucide-react` đã có sẵn.)
 
 ---
 
@@ -125,8 +131,8 @@ Layout tổng: `grid grid-cols-[1fr_320px] gap-6 p-6` (≤1100px → 1 cột). T
 
 ### 2.1 Tải dữ liệu
 - [ ] `useEffect` load song song (`Promise.all`): `reportSalesSummary(today)`, `listOpenOrders()`, `listTableStatus()`, `getCurrentShift()`.
-- [ ] `today` range: COPY cách dựng `from/to` của `Reports.tsx`.
-- [ ] Biểu đồ tuần: gọi `reportSalesSummary` cho **7 ngày gần nhất** (mỗi ngày 1 range) bằng `Promise.all`, map ra `[{ day: "T2", revenue }, …]`. (Chấp nhận 7 lệnh — offline, rẻ; KHÔNG thêm command mới.)
+- [ ] `today` range = `dayRange(new Date())` (helper ở mục Phụ thuộc) → `reportSalesSummary(today)`.
+- [ ] Biểu đồ tuần: gọi `reportSalesSummary(dayRange(d))` cho **7 ngày gần nhất** (vòng `for` lùi 6→0 ngày từ hôm nay) bằng `Promise.all`, map ra `[{ day: "T2", revenue }, …]` (nhãn thứ VN từ `d.getDay()`). (Chấp nhận 7 lệnh — offline, rẻ; KHÔNG thêm command mới.)
 - [ ] Có state `loading` + `error` + empty-state cho mỗi khối.
 
 ### 2.2 KPI cards (4 thẻ, `grid-cols-2 lg:grid-cols-4 gap-4`)
@@ -140,7 +146,7 @@ Layout tổng: `grid grid-cols-[1fr_320px] gap-6 p-6` (≤1100px → 1 cột). T
 - [ ] `AreaChart` trong `ResponsiveContainer` (cao ~220px), 1 series `revenue`, gradient nâu `#6F4E37` (fill mờ → trong), `XAxis dataKey="day"`, `YAxis` ẩn hoặc format gọn (k/tr), `Tooltip` format `formatVnd`, lưới mảnh. Bọc trong card `rounded-2xl border bg-card p-5` + tiêu đề "Doanh thu 7 ngày".
 
 ### 2.4 List "Đơn đang xử lý"
-- [ ] Card `rounded-2xl border bg-card`: mỗi dòng = mã/tên đơn (bàn hoặc "Mang đi") + số món + tổng (`text-primary font-bold`) + pill "Đang pha" gold. Empty-state: "Chưa có đơn đang xử lý".
+- [ ] Card `rounded-2xl border bg-card`: mỗi dòng map từ `Order`: `code` (mã đơn) + nhãn loại (`order_type === "DINE_IN"` → tên bàn tra từ `listTableStatus()` theo `table_id`; `"TAKEAWAY"` → "Mang đi") + số món = `items.length` + tổng `total` (`formatVnd`, `text-primary font-bold`) + pill "Đang pha" gold. Empty-state: "Chưa có đơn đang xử lý".
 - [ ] Click dòng → điều hướng mở đơn (`/sales?...` hoặc `/payment/:orderId` tùy luồng hiện có — tái dùng cách `Sales`/`Tables` đang điều hướng).
 
 ### 2.5 Aside phải
